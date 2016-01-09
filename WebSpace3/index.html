@@ -1,0 +1,352 @@
+﻿<!DOCTYPE html>
+<html>
+<head load="ru">
+<title>
+Spaceship Altec
+</title>
+<style>
+#gamezone {
+  position: absolute;
+  left:     50%;
+  top:      50%;
+}
+#example {
+  width: 100%;
+  height: 100%;
+}
+</style>
+</head>
+<body onload="main()">
+
+<script>
+/*/////////////////////////
+Автор: Фёдоров Александр //
+*//////////////////////////
+
+//Глобальные переменные
+
+//Загрузка ресурсов
+var spaceImg = new Image();  			// Создает spaceship
+spaceImg.src = 'image/spaceship.png';  	// 100x65
+
+var thunderImg = new Image();  			// Создает thunder
+thunderImg.src = 'image/thunder_min.png';  	// 400x300
+
+var laserImg = new Image();  			// Создает laser
+laserImg.src = 'image/laser.png';  	// 2x10
+
+var meteorite1Img = new Image();  			// Создает Метиорит 1
+meteorite1Img.src = 'image/meteorite1.png';		//512 x 512
+
+var meteorite2Img = new Image();  			// Создает Метиорит 2
+meteorite2Img.src = 'image/meteorite2.png';		//100 x 100
+
+//Опискание карты
+var fps = 1000/60;
+var map = {x:0, y:0, width:4000, height:4000};
+var monitor = {x:0, y:0, width:1200, height:900, speed:10};
+//Для процентного соотношения активной области
+var mouseControlX;	
+var mouseControlY;
+//Координаты мыши
+var mouseX;
+var mouseY;
+
+var key = {
+m1:false,	//ЛКМ
+m2:false,	//СКМ
+m3:false,	//ПКМ
+k87:false,	//W
+k83:false,	//S
+k68:false,	//D
+k65:false,	//A
+k69:false	//E
+};
+//Конструктор Игроков
+function Player(_img, _x, _y, _speed, _z, _angleSpeed) {
+	this.img = _img;
+	this.x = _x;
+	this.y = _y;
+	this.width = _img.width;
+	this.height = _img.height;
+	this.speed = _speed;
+	this.z = _z;
+	this.angleSpeed = _angleSpeed;
+	this.fire = 0;
+	this.fireRecharge = 40;
+}
+
+player = new Player(thunderImg, 500, 500, 10, 0, 3);
+
+//Конструктор Выстрелов
+function Shot(_img, _x, _y, _speed, _z) {
+	this.img = _img;
+	this.x = _x;
+	this.y = _y;
+	this.width = _img.width;
+	this.height = _img.height;
+	this.speed = _speed;
+	this.z = _z;
+}
+var laser = [];
+
+
+//Конструктор Метеорита
+function Meteorite(_img, _x, _y, _z, _angleSpeed) {
+	this.img = _img;
+	this.x = _x;
+	this.y = _y;
+	this.width = _img.width;
+	this.height = _img.height;
+	this.speed = 0;
+	this.radius = 0;
+	this.vector = 0;
+	this.z = _z;
+	this.angleSpeed = _angleSpeed;
+}
+
+var meteorite = [6];
+meteorite[0] = new Meteorite(meteorite1Img, 200, 200, 10, 0.1);
+meteorite[1] = new Meteorite(meteorite2Img, 3000, 3000, 20, -0.1);
+meteorite[2] = new Meteorite(meteorite1Img, 900, 900, 30, 0.2);
+meteorite[3] = new Meteorite(meteorite1Img, 2000, 2000, 40, 0.1);
+meteorite[4] = new Meteorite(meteorite2Img, 550, 850, 50, 2.6);
+meteorite[4].speed = 2;
+meteorite[4].radius = 13;
+meteorite[5] = new Meteorite(meteorite2Img, 420, 850, 100, 1.6);
+meteorite[5].speed = 1;
+meteorite[5].radius = 8;
+ var newWidth;
+ var newHeight;
+
+function main(){//main
+ var gamezone = document.getElementById('gamezone');
+ var widthToHeight = 4 / 3;
+ newWidth = window.innerWidth;
+ newHeight = window.innerHeight;
+ var newWidthToHeight = newWidth / newHeight;
+    
+    if (newWidthToHeight > widthToHeight) {
+        newWidth = newHeight * widthToHeight;
+        gamezone.style.height = newHeight + 'px';
+        gamezone.style.width = newWidth + 'px';
+    } else {
+        newHeight = newWidth / widthToHeight;
+        gamezone.style.width = newWidth + 'px';
+        gamezone.style.height = newHeight + 'px';
+    }
+    gamezone.style.marginTop = (-newHeight / 2) + 'px';
+    gamezone.style.marginLeft = (-newWidth / 2) + 'px';
+    
+    var canvas = document.getElementById('example');
+	var	ctx = canvas.getContext('2d');
+    ctx.width = newWidth;
+    ctx.height = newHeight;
+	
+  //window.addEventListener('resize', resizeGame, false);//Для телефонов че то
+  //window.addEventListener('orientationchange', resizeGame, false);//Для телефонов че то
+  
+function engle(){
+	// циклирует опримизиронанно функцию
+	requestAnimationFrame(engle);
+	
+	newWidth = window.innerWidth;
+	newHeight = window.innerHeight;
+	newWidthToHeight = newWidth / newHeight;
+    
+    if (newWidthToHeight > widthToHeight) {
+        newWidth = newHeight * widthToHeight;
+        gamezone.style.height = newHeight + 'px';
+        gamezone.style.width = newWidth + 'px';
+    } else {
+        newHeight = newWidth / widthToHeight;
+        gamezone.style.width = newWidth + 'px';
+        gamezone.style.height = newHeight + 'px';
+    }
+    gamezone.style.marginTop = (-newHeight / 2) + 'px';
+    gamezone.style.marginLeft = (-newWidth / 2) + 'px';
+	
+	
+	// Размер активного окна
+    ctx.width = newWidth;
+    ctx.height = newHeight;
+	
+	mouseControlX = newWidth / 100;
+	mouseControlY = newHeight / 100;
+	
+	
+	ctx.fillStyle = "rgba(0, 0, 0, 1)";
+	ctx.fillRect(0, 0, example.width, example.height);
+	//Движение камерой
+	if(key.k87 == true){
+	monitor.x += Math.sin(player.z * Math.PI /180) * player.speed;
+	monitor.y -= Math.cos(player.z * Math.PI /180) * player.speed;
+	}//Вверх
+    if(key.k83 == true){
+	monitor.x += Math.sin(player.z * Math.PI /180) * (-player.speed/2);
+	monitor.y -= Math.cos(player.z * Math.PI /180) * (-player.speed/2);
+	}//Вниз
+    if(key.k68 == true){player.z += player.angleSpeed;}//Вправо
+    if(key.k65 == true){player.z -= player.angleSpeed;}//Влево
+	if(key.k69 == true && player.fire == 0){
+		player.fire = player.fireRecharge;
+		laser.push(new Shot(laserImg, player.x +100, player.y -50, 20, player.z));
+		document.getElementById('zar').play();
+	}// Огонь
+	
+	//Отрисовка Лазерных выстрелов
+	for(var i = 0; i < laser.length; i++){
+		drawRotatedImage(laser[i].img, laser[i].x, laser[i].y, laser[i].z);
+		laser[i].x += Math.sin(laser[i].z * Math.PI /180) * (laser[i].speed);
+		laser[i].y -= Math.cos(laser[i].z * Math.PI /180) * (laser[i].speed);
+		if(laser[i].x < map.x || laser[i].x > map.width || laser[i].y < map.y || laser[i].y > map.height){
+			laser.splice(i,1);
+		}
+	}
+	//console.log( Object.keys( laser ).length);
+	
+	//Отрисовка Коробля 
+	drawRotatedImage(player.img, 600, 450, player.z);//отрисовывает Корабль c поворотом на угол
+	//Свойсвта Коробля
+	if(player.fire > 0){
+		player.fire--;
+	}
+	
+	
+	if(key.m1 == true){
+		if(mouseX > 0 && mouseX < mouseControlX * 10 && mouseY > 0 && mouseY < mouseControlY * 10){
+			player.z -= player.angleSpeed;//Влево
+		}
+		if(mouseX > mouseControlX * 90 && mouseX < newWidth && mouseY > 0 && mouseY < mouseControlY * 10){
+			player.z += player.angleSpeed;//Вправо
+		}
+		if(mouseX > mouseControlX * 40 && mouseX < mouseControlX * 60 && mouseY > mouseControlY * 40 && mouseY < mouseControlY * 60){
+			monitor.x += Math.sin(player.z * Math.PI /180) * player.speed;
+			monitor.y -= Math.cos(player.z * Math.PI /180) * player.speed;
+		}
+	}
+	ctx.lineWidth = 3;			//Толщина линии
+	ctx.strokeStyle = 'red';	//Цвет линии
+	
+	//Граница карты
+	ctx.strokeRect(map.x - 1200 - monitor.x, map.y - 900 - monitor.y, map.width + 1200, map.height + 900);
+	if(monitor.x < map.x - 1200){monitor.x = -1200;}
+	if(monitor.y < map.y - 900){monitor.y = -900;}
+	if(monitor.x + monitor.width > map.width){monitor.x = map.width - monitor.width;}
+	if(monitor.y + monitor.height > map.height){monitor.y = map.height - monitor.height;}
+	
+	//Отрисовка Метеоритов
+	ctx.fillStyle = 'rgba(255,165,0,1)';
+	for(var i = 0; i < meteorite.length; i++){
+		meteorite[i].z += meteorite[i].angleSpeed;
+		drawRotatedImage(meteorite[i].img, meteorite[i].x - monitor.x, meteorite[i].y - monitor.y, meteorite[i].z);
+		if(meteorite[i].vector >= 360){meteorite[i].vector = 0;}
+		if(meteorite[i].z >= 360){meteorite[i].z = 0;}
+	}
+	meteorite[4].vector += meteorite[4].speed;
+	meteorite[4].x += meteorite[4].radius * Math.sin(meteorite[4].vector *Math.PI /180);
+	meteorite[4].y -= meteorite[4].radius * Math.cos(meteorite[4].vector *Math.PI /180);
+	
+	meteorite[5].vector += meteorite[5].speed;
+	meteorite[5].x += meteorite[5].radius * Math.sin(meteorite[5].vector *Math.PI /180);
+	meteorite[5].y -= meteorite[5].radius * Math.cos(meteorite[5].vector *Math.PI /180);
+	
+	
+
+	//Отрисовка окружности
+	ctx.beginPath();	 		//Для начала отрисовки фигуры
+	ctx.strokeStyle = 'green';	//Цвет линии
+	ctx.arc(65, 65, 50, 0, Math.PI*2, false); // x, y, r, начальный угол, конечный угол, Направление прорисовки (false – по часовой стрелке)
+	
+	ctx.lineWidth = 15;			//Толщина линии
+	ctx.stroke();				//Делает линии видимыми
+	//ctx.fill(); 				//Закрашивает фигуру
+	ctx.closePath(); 			//Завершеdsdasние рисования
+	
+	ctx.beginPath();	 		//Для начала отрисовки фигуры
+	ctx.arc(1135, 65, 50, 0, Math.PI*2, false); // x, y, r, начальный угол, конечный угол, Направление прорисовки (false – по часовой стрелке)
+	ctx.lineWidth = 15;			//Толщина линии
+	ctx.stroke();				//Делает линии видимыми
+	ctx.closePath(); 			//Завершеdsdasние рисования
+	
+}
+
+function drawRotatedImage(image, x, y, angle) { 
+    ctx.save(); 		//Сохранить текущую систему координат
+    ctx.translate(x, y);// Сдвинуть к середине, где мы хотим нарисовать нашу картинку
+    ctx.rotate(angle * Math.PI/180);// вращать вокруг этой точки, преобразовывая куртинку 
+    ctx.drawImage(image, -(image.width/2), -(image.height/2));//рисует его вверх и влево на половину ширины и высоту изображения 
+    ctx.restore(); 		//Восстановить Координаты данные по умолчанию
+}
+
+engle();
+//setInterval(engle, fps); 
+}//main
+
+document.onkeydown = function(event){
+	if(event.keyCode == 87){key.k87 = true;}//Вверх
+	if(event.keyCode == 83){key.k83 = true;}//Вниз
+	if(event.keyCode == 68){key.k68 = true;}//Вправо
+	if(event.keyCode == 65){key.k65 = true;}//Влево
+	if(event.keyCode == 69){key.k69 = true;}//Огонь E
+}
+
+document.onkeyup = function(event){
+	if(event.keyCode == 87){key.k87 = false;}//Вверх
+	if(event.keyCode == 83){key.k83 = false;}//Вниз
+	if(event.keyCode == 68){key.k68 = false;}//Вправо
+	if(event.keyCode == 65){key.k65 = false;}//Влево
+	if(event.keyCode == 69){key.k69 = false;}//Огонь E
+}
+
+document.onmousedown = function(event){
+	mouseX = event.offsetX;
+	mouseY = event.offsetY;
+	key.m1 = true;
+	if(event.which == 1){key.m1 = true;}//ЛКМ
+	if(event.which == 2){key.m2 = true;}//СКМ
+	if(event.which == 3){key.m3 = true;}//ПКМ
+}
+
+document.onmouseup = function(event){
+	key.m1 = false;
+	if(event.which == 1){key.m1 = false;}//ЛКМ
+	if(event.which == 2){key.m2 = false;}//СКМ
+	if(event.which == 3){key.m2 = false;}//ПКМ
+}
+
+/*function ClickDown(){
+	key.m1 = true;
+	mouseX = event.offsetX;
+	mouseY = event.offsetY;
+}
+function ClickUp(){
+	key.m1 = false;
+}*/
+function startup(){
+alert('+');
+}
+function gradInRad(grad){return grad*Math.PI/180;}
+function radInGrad(rad){return rad*180/Math.PI;}
+function randomZ (min,max){min = parseInt(min);max = parseInt(max);return Math.floor( Math.random() * (max - min + 1) ) + min;}
+function randomR (min,max){return ( Math.random() * (max - min + 1) ) + min;}
+
+
+</script>
+<div id="gamezone">
+<canvas id="example" width="1200" height="900" style="cursor: crosshair;">
+Ваш браузер не поддерживаеи Canvas
+</canvas>
+</div>
+
+<section id="player">
+ <audio id="media" autoplay>
+  <!--<source src="music\space.mp3">-->
+ </audio>
+</section>
+<audio id="zar">
+  <source src="music\sounds_zap.mp3">
+</audio>
+
+</body>
+</html>
